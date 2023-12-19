@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bing search</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Bing search</h1>
+    <form id="dataForm">
+      <input type="email" id="email" />
+      <input type="password" id="password" />
+      <button type="submit">Invia</button>
+    </form>
+
+    <button onclick="startDesktopSearch()">Avvia</button>
+    <button onclick="stopConnection()">Stop</button>
+    <div id="logContainer">
+      <b>Output:</b>
+      <br /><br />
+    </div>
+
+    <script>
+      const logContainer = document.getElementById("logContainer");
+      const socket = new WebSocket("ws://localhost:8002");
+
+      socket.onmessage = function (event) {
+        const logMessage = document.createElement("div");
+        logMessage.innerHTML = event.data;
+        logContainer.appendChild(logMessage);
+      };
+
+      function startDesktopSearch() {
+        fetch("/google-desktop-search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => response.text())
+          .then((message) => {
+            const logMessage = document.createElement("div");
+            logMessage.innerHTML = message;
+            logContainer.appendChild(logMessage);
+          })
+          .catch((err) => console.error(err));
+      }
+
+      function stopConnection() {
+        fetch("/google-search-stop", {
+          method: "POST",
+        })
+          .then((response) => response.text())
+          .then((data) => {
+            console.log("Server response:", data);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>
