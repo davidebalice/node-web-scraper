@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Google search</title>
+    <title>Booking.com search</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <h1>Google search</h1>
+    <h1>Booking.com search</h1>
     <form id="dataForm">
       <input type="email" id="email" />
       <input type="password" id="password" />
@@ -22,7 +22,7 @@
 
     <script>
       const logContainer = document.getElementById("logContainer");
-      const socket = new WebSocket("ws://localhost:8002");
+      const socket = new WebSocket("ws://localhost:8003");
 
       socket.onmessage = function (event) {
         const logMessage = document.createElement("div");
@@ -31,7 +31,7 @@
       };
 
       function startDesktopSearch() {
-        fetch("/google-desktop-search", {
+        fetch("/bookingcom-desktop-search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -47,7 +47,7 @@
       }
 
       function stopConnection() {
-        fetch("/google-search-stop", {
+        fetch("/bookingcom-search-stop", {
           method: "POST",
         })
           .then((response) => response.text())
