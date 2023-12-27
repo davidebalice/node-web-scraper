@@ -1,7 +1,6 @@
 const puppeteer = require("puppeteer");
 const express = require("express");
 const WebSocket = require("ws");
-const app = express();
 const wsPort = 8002;
 const unirest = require("unirest");
 const cheerio = require("cheerio");
@@ -20,170 +19,180 @@ wss.on("connection", (ws) => {
   };
 });
 
-async function startSearch(typeSearch, mode, userId, password) {
-  // Lancio il browser false=vedo l'anteprima, "new"= stealth;
-  const browser = await puppeteer.launch({ headless: mode });
+/*
+const searchGoogle = async () => {
+  const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  const fs = require("fs");
-  // Array che conterrà le parole da ricercare;
-  let randomWordsDesktop = [];
-  let n;
 
-  // Leggi il contenuto del file dizionario.txt
-  fs.readFile("dizionario.txt", "utf8", function (err, data) {
-    if (err) throw err;
-    let words = data.split("\n");
+  await page.setUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36"
+  );
 
-    // A seconda del tipo di ricerca estraggo 40 o 25 parole, ne estraggo un po' di più così siamo sicuri dia rrivare al 100%;
-    if (typeSearch == "desktop") {
-      // Estrai 40 parole casuali per la ricerca desktop
-      for (let i = 0; i < 40; i++) {
-        randomWordsDesktop.push(
-          words[Math.floor(Math.random() * words.length)]
-        );
-      }
-    } else {
-      // Estrai 25 parole casuali per la ricerca mobile
-      for (let i = 0; i < 25; i++) {
-        randomWordsDesktop.push(
-          words[Math.floor(Math.random() * words.length)]
-        );
-      }
-    }
+  await page.goto("https://www.google.com/search?q=prova+ricerca&gl=it&hl=it");
+
+  // Scroll down to the bottom of the page to load more results
+  await autoScroll(page);
+
+  const html = await page.content();
+  const $ = cheerio.load(html);
+
+  let titles = [];
+  let links = [];
+  let snippets = [];
+  let displayedLinks = [];
+
+  $(".g .yuRUbf h3").each((i, el) => {
+    titles[i] = $(el).text();
   });
 
-  // A seconda della ricerca apro o meno l'emulazione iPhone X;
-  if (typeSearch == "desktop") {
-    n = 2.5;
-  } else {
-    const iPhone = puppeteer.devices["iPhone X"];
-    await page.emulate(iPhone);
-    n = 4;
+  $(".yuRUbf a").each((i, el) => {
+    links[i] = $(el).attr("href");
+  });
+
+  $(".g .VwiC3b ").each((i, el) => {
+    snippets[i] = $(el).text();
+  });
+
+  $(".g .yuRUbf .NJjxre .tjvcx").each((i, el) => {
+    displayedLinks[i] = $(el).text();
+  });
+
+  const organicResults = [];
+
+  for (let i = 0; i < titles.length; i++) {
+    organicResults[i] = {
+      title: titles[i],
+      links: links[i],
+      snippet: snippets[i],
+      displayedLink: displayedLinks[i],
+    };
+
+    console.log("<b>titles[i]</b>");
+    console.log(titles[i]);
   }
 
-  console.clear();
-  console.log(" ");
-  console.log("Google search scraping. ");
-  console.log("(C) 2023 By Davide Balice V. 1.03.");
-  console.log(" ");
-  console.log(" ");
-  if (typeSearch == "desktop") {
-    console.log("login dektop started, wait...");
-  } else {
-    console.log("login mobile started, wait...");
-  }
-
-  // Vado alla pagina di Login;
-  await page.goto("https://www.google.com");
-
-  // Avviso che siamo pronti a partire con la ricerca;
-  console.clear();
-  console.log(" ");
-
-  if (typeSearch == "desktop") {
-    console.log("inzio ricerca desktop, attendere...");
-  } else {
-    console.log("inzio ricerca mobile, attendere...");
-  }
-
-  // Loop principale di ricerca;
-  for (let word of randomWordsDesktop) {
-    if (!shouldRun) {
-      // Interrompi il ciclo se la variabile flag diventa falsa
-      console.log("Execution stopped");
-      break;
-    }
-
-    // Attendi che la casella di ricerca sia visibile;
-    await page.waitForSelector(".gLFyf");
-
-    // Trova la casella di ricerca;
-    await page.type(".gLFyf", word);
-
-    // aspetta 3 secondi così se ci sono i cookie li togliamo;
-    await page.waitForTimeout(3000);
-
-    try {
-      // Cerca l'elemento sulla pagina per i cookie;
-      const button = await page.$("#bnp_btn_accept");
-
-      // Se l'elemento esiste (non è null), allora fa clic su di esso;
-      if (button !== null) {
-        await page.click("#bnp_btn_accept");
-      }
-    } catch (error) {
-      // Se c'è un errore durante il clic sul pulsante, l'errore verrà catturato e registrato nella console;
-      console.error("Errore durante il clic sul pulsante: ", error);
-    }
-
-    // Premi il tasto Invio per effettuare la ricerca;
-    await page.keyboard.press("Enter");
-
-    // Attendi 7 secondi + 3 per i cookie = 10
-    await page.waitForTimeout(7000);
-
-    console.clear();
-    console.log(" ");
-    if (typeSearch == "desktop") {
-      console.log("ricerca desktop completata al " + n + "%");
-      n = n + 2.5;
-    } else {
-      console.log("ricerca mobile completata al " + n + "%");
-      n = n + 4;
-    }
-  }
-
-  // Aspetto 2 secondi e chiudo tutto;
-  await page.waitForTimeout(2000);
   await browser.close();
-  console.clear();
-}
-
-async function stopSearch() {
-  shouldRun = false;
-}
-
-const searchGoogle = () => {
-  return unirest
-    .get("https://www.google.com/search?q=prova ricerca&gl=it&hl=it")
-    .headers({
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36",
-    })
-    .then((response) => {
-      let $ = cheerio.load(response.body);
-      console.log(response.status);
-      let titles = [];
-      let links = [];
-      let snippets = [];
-      let displayedLinks = [];
-
-      $(".g .yuRUbf h3").each((i, el) => {
-        titles[i] = $(el).text();
-      });
-      $(".yuRUbf a").each((i, el) => {
-        links[i] = $(el).attr("href");
-      });
-      $(".g .VwiC3b ").each((i, el) => {
-        snippets[i] = $(el).text();
-      });
-      $(".g .yuRUbf .NJjxre .tjvcx").each((i, el) => {
-        displayedLinks[i] = $(el).text();
-      });
-
-      const organicResults = [];
-
-      for (let i = 0; i < titles.length; i++) {
-        organicResults[i] = {
-          title: titles[i],
-          links: links[i],
-          snippet: snippets[i],
-          displayedLink: displayedLinks[i],
-        };
-        console.log("<b>titles[i]</b>");
-        console.log(titles[i]);
-      }
-    });
 };
 
-module.exports = { startSearch, searchGoogle, stopSearch };
+// Function to simulate scrolling in Puppeteer
+const autoScroll = async (page) => {
+  await page.evaluate(async () => {
+    await new Promise((resolve, reject) => {
+      let totalHeight = 0;
+      const distance = 100;
+      const maxScrollAttempts = 100;
+
+      const timer = setInterval(() => {
+        const scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+
+        if (totalHeight >= scrollHeight || maxScrollAttempts <= 0) {
+          clearInterval(timer);
+          resolve();
+        }
+        maxScrollAttempts--;
+      }, 100);
+    });
+  });
+};
+*/
+
+const searchGoogle = async () => {
+  const allTitles = [];
+  const scrollLimit = 15000;
+  let scrollY = 0;
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  let currentHeight = await page.evaluate(() => document.body.scrollHeight);
+  await page.setUserAgent(
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36"
+  );
+  await page.goto("https://www.google.com/search?q=prova+ricerca&gl=it&hl=it");
+
+  while (scrollY < scrollLimit) {
+    console.log("ciclo:" + scrollY + " " + scrollLimit);
+
+    const html = await page.content();
+    // console.log(html);
+    const $ = cheerio.load(html);
+
+    currentHeight = await page.evaluate(() => document.body.scrollHeight);
+    console.log("currentHeight:" + currentHeight);
+
+    await page.waitForSelector("#L2AGLb");
+
+    // Ora clicchiamo sul pulsante
+    await page.evaluate(() => {
+      // Selezioniamo il pulsante tramite l'ID
+      const button = document.getElementById("L2AGLb");
+
+      // Clicchiamo sul pulsante
+      if (button) {
+        button.click();
+      } else {
+        console.error("Pulsante non trovato");
+      }
+    });
+
+    let titles = [];
+    let links = [];
+    let snippets = [];
+    let displayedLinks = [];
+
+    $(".g .yuRUbf h3").each((i, el) => {
+      titles[i] = $(el).text();
+    });
+    $(".yuRUbf a").each((i, el) => {
+      links[i] = $(el).attr("href");
+    });
+    $(".g .VwiC3b ").each((i, el) => {
+      snippets[i] = $(el).text();
+    });
+    $(".g .yuRUbf .NJjxre .tjvcx").each((i, el) => {
+      displayedLinks[i] = $(el).text();
+    });
+
+    const organicResults = [];
+
+    for (let i = 0; i < titles.length; i++) {
+      organicResults[i] = {
+        title: titles[i],
+        links: links[i],
+        snippet: snippets[i],
+        displayedLink: displayedLinks[i],
+      };
+      if (!allTitles.includes(titles[i])) {
+        console.log("<b>titles[i]</b>");
+        console.log(titles[i]);
+        allTitles.push(titles[i]);
+      }
+    }
+
+    await page.evaluate(() => {
+      window.scrollTo(0, window.document.body.scrollHeight);
+    });
+
+    //await page.keyboard.press("PageDown");
+    await page.waitForTimeout(2000);
+
+    const newHeight = await page.evaluate(
+      () => window.document.body.scrollHeight
+    );
+    console.log("Nuova altezza della pagina:", newHeight);
+
+    // Update scroll position
+    scrollY = scrollY + 4000;
+    /*
+    scrollY = await page.evaluate(() => {
+      return document.body.scrollHeight;
+    });
+*/
+    console.log("scrollY" + scrollY);
+    console.log("scrollLimit" + scrollLimit);
+
+    await page.waitForTimeout(3000);
+  }
+};
+
+module.exports = { searchGoogle };
