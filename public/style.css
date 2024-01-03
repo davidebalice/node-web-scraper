@@ -27,10 +27,6 @@ button {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
-.main {
-  padding: 30px;
-}
-
 .header {
   width: 100%;
   height: 90px;
@@ -38,6 +34,28 @@ button {
   display: flex;
   background: #fff;
   align-items: center;
+  justify-content: space-between;
+}
+
+.footer {
+  width: 100%;
+  height: 36px;
+  background: #555;
+  align-items: center;
+  display: flex;
+  text-align: center;
+  align-items: center;
+}
+
+.footer a {
+  color: #fff;
+  margin: 0 auto;
+  text-decoration: none;
+}
+
+.main {
+  padding: 30px;
+  min-height: calc(100vh - 223px);
 }
 
 .menu {
@@ -66,4 +84,55 @@ button {
 .logo {
   width: 140px;
   margin-left: 10px;
+}
+
+.github {
+  width: 160px;
+  margin-right: 10px;
+}
+
+.description {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+  line-height: 28px;
+}
+
+.nodeLogo {
+  width: 200px;
+}
+
+.sitesContainer {
+  display: flex;
+  margin: 0 auto;
+  margin-top: 50px;
+  border: 1px solid #ddd;
+  width: 700px;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  flex-wrap: wrap;
+}
+.sitesContainer a {
+  width: 50%;
+  text-align: center;
+}
+
+.paragraph {
+  line-height: 28px;
+}
+
+@media (max-width: 700px) {
+  .description {
+    width: 96%;
+  }
+  .sitesContainer {
+    width: 96%;
+  }
+}
+
+.searchInput {
+  width: 200px;
+  padding: 8px;
 }

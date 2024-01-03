@@ -8,24 +8,31 @@
   <body>
     <% if (header) { %> <%- header %> <% } %>
     <div class="main">
-      <h1>Bing search</h1>
+      <img src="./assets/img/bing2.png" />
+      <p class="paragraph">
+        Make a Bing search and view the result. Scaper make a scroll page to
+        load more result.<br />
+        <strong>Important:</strong> The scraper have a limit to avoid ip ban.
+      </p>
       <form id="dataForm">
-        <input type="email" id="email" />
-        <input type="password" id="password" />
-        <button type="submit">Invia</button>
-        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+        <input
+          type="text"
+          id="key"
+          class="searchInput"
+          placeholder="Insert a key"
+        />
+        <button type="submit" id="searchButton">Search</button>
       </form>
 
-      <button onclick="startDesktopSearch()">Avvia</button>
-      <button onclick="stopConnection()">Stop</button>
       <div id="logContainer">
         <b>Output:</b>
         <br /><br />
       </div>
 
       <script>
+        const serverUrl = "<%= serverUrl %>";
         const logContainer = document.getElementById("logContainer");
-        const socket = new WebSocket("ws://localhost:8001");
+        const socket = new WebSocket(`ws://${serverUrl}:8001`);
 
         socket.onmessage = function (event) {
           const logMessage = document.createElement("div");
@@ -33,25 +40,39 @@
           logContainer.appendChild(logMessage);
         };
 
+        var searchButton = document.getElementById("searchButton");
+
+        searchButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          startDesktopSearch();
+        });
+
         function startDesktopSearch() {
-          const email = document.getElementById("email").value;
-          const password = document.getElementById("password").value;
+          const inputValue = document.getElementById("key").value;
+          searchButton.disabled = true;
+          searchButton.disabled = true;
+          searchButton.style.background = "gray";
 
-          const data = {
-            email: email,
-            password: password,
-          };
+          // Dopo 20 secondi, riattiva il pulsante e imposta lo sfondo blu
+          setTimeout(function () {
+            searchButton.disabled = false;
+            searchButton.style.background = "#027bff";
+          }, 20000);
 
-          fetch("/bing-desktop-search", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          })
-            .then((response) => response.text())
-            .then((message) => console.log(message))
-            .catch((err) => console.error(err));
+          if (inputValue === "") {
+            alert("Fill search input");
+          } else {
+            fetch("/bing-desktop-search", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ key: inputValue }),
+            })
+              .then((response) => response.text())
+              .then((message) => console.log(message))
+              .catch((err) => console.error(err));
+          }
         }
 
         function stopConnection() {
@@ -68,5 +89,6 @@
         }
       </script>
     </div>
+    <% if (footer) { %> <%- footer %> <% } %>
   </body>
 </html>

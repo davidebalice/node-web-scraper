@@ -9,21 +9,26 @@
   <body>
     <% if (header) { %> <%- header %> <% } %>
     <div class="main">
-      <p>
-        <h3>Web scraper</h3>
-        <br />
-        Web scaper developed in Node and Puppeteer library
+      <div class="description">
+        <img src="./assets/img/node.png" class="nodeLogo" />
+        <h2>Node web scraper</h2>
+        Web scaper developed in Node and Puppeteer library.
         <br />
         Only for study purpose, data will not be saved.
-      </p>
-      <br /><br /><br />
-      <a href="/bing"> Bing </a>
-      <br /><br />
-      <a href="/google"> Google </a>
-      <br /><br />
-      <a href="/bookingcom"> Booking.com </a>
-      <br /><br />
-      <a href="/amazon"> Amazon </a>
+        <br />
+        There are 4 examples of important web sites.
+        <br />
+        View result directly on page with web socket.
+      </div>
+
+      <div class="sitesContainer">
+        <a href="/google"><img src="./assets/img/google.png" /></a>
+        <a href="/bing"><img src="./assets/img/bing.png" /></a>
+        <a href="/bookingcom"><img src="./assets/img/bookingcom.png" /></a>
+        <a href="/amazon"><img src="./assets/img/amazon.png" /></a>
+      </div>
     </div>
+
+    <% if (footer) { %> <%- footer %> <% } %>
   </body>
 </html>

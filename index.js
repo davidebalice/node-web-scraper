@@ -1,5 +1,5 @@
 /////////////////////////////////////////
-// Bing search                         //
+// Node Web scraper                    //
 // (C) 2023 By Davide Balice V. 1.03.  //
 /////////////////////////////////////////
 
@@ -13,6 +13,7 @@ const path = require("path");
 
 // Configura Express per utilizzare i file statici (html,css,js,ecc...)
 app.use(express.static("public"));
+app.use("/assets", express.static(__dirname + "/public/assets"));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
@@ -28,6 +29,18 @@ app.use((req, res, next) => {
       return res.status(500).send("Error load header");
     }
     res.locals.header = data;
+    next();
+  });
+});
+
+//footer
+app.use((req, res, next) => {
+  fs.readFile(__dirname + "/public/footer.html", "utf8", (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error load footer");
+    }
+    res.locals.footer = data;
     next();
   });
 });

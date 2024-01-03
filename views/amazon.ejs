@@ -24,8 +24,9 @@
       </div>
 
       <script>
+        const serverUrl = "<%= serverUrl %>";
         const logContainer = document.getElementById("logContainer");
-        const socket = new WebSocket("ws://localhost:8004");
+        const socket = new WebSocket(`ws://${serverUrl}:8004`);
 
         socket.onmessage = function (event) {
           const logMessage = document.createElement("div");
@@ -63,5 +64,6 @@
         }
       </script>
     </div>
+    <% if (footer) { %> <%- footer %> <% } %>
   </body>
 </html>

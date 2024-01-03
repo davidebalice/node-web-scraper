@@ -1,12 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const bingSearch = require("./bingSearch");
-const googleSearch = require("./googleSearch");
+const bing = require("./bing");
+const google = require("./google");
 const bookingcom = require("./bookingcom");
 const amazon = require("./amazon");
 const path = require("path");
 const rateLimit = require("express-rate-limit");
 const fs = require("fs");
+const config = require("./config");
 
 //impostazione di un limiter per evitare uso eccessivo ed eventuali ban dell'ip
 const limiter = rateLimit({
@@ -23,7 +24,11 @@ router.get("/", (req, res) => {
       console.error(err);
       return res.status(500).send("Error html file");
     }
-    res.render("index", { htmlContent: data, header: res.locals.header });
+    res.render("index", {
+      htmlContent: data,
+      header: res.locals.header,
+      serverUrl: config.serverUrl,
+    });
   });
 });
 
@@ -36,18 +41,22 @@ router.get("/bing", (req, res) => {
       console.error(err);
       return res.status(500).send("Error html file");
     }
-    res.render("bing", { htmlContent: data, header: res.locals.header });
+    res.render("bing", {
+      htmlContent: data,
+      header: res.locals.header,
+      serverUrl: config.serverUrl,
+    });
   });
 });
 
 router.post("/bing-desktop-search", limiter, (req, res) => {
-  const { email, password } = req.body;
+  const { key } = req.body;
   res.send("App start");
-  bingSearch.startSearch("desktop", "new", email, password);
+  bing.startSearch("desktop", "new", key);
 });
 
 router.post("/bing-search-stop", (req, res) => {
-  bingSearch.stopSearch();
+  bing.stopSearch();
   console.log("Function stopped");
 });
 
@@ -60,17 +69,22 @@ router.get("/google", (req, res) => {
       console.error(err);
       return res.status(500).send("Error html file");
     }
-    res.render("google", { htmlContent: data, header: res.locals.header });
+    console.log(config.serverUrl);
+    res.render("google", {
+      htmlContent: data,
+      header: res.locals.header,
+      serverUrl: config.serverUrl,
+    });
   });
 });
 
 router.post("/google-desktop-search", limiter, (req, res) => {
   res.send("App start");
-  googleSearch.searchGoogle("desktop");
+  google.searchGoogle(req.body.key);
 });
 
 router.post("/google-search-stop", (req, res) => {
-  googleSearch.stopSearch();
+  google.stopSearch();
   console.log("Function stopped");
 });
 
@@ -82,7 +96,11 @@ router.get("/bookingcom", (req, res) => {
       console.error(err);
       return res.status(500).send("Error html file");
     }
-    res.render("bookingcom", { htmlContent: data, header: res.locals.header });
+    res.render("bookingcom", {
+      htmlContent: data,
+      header: res.locals.header,
+      serverUrl: config.serverUrl,
+    });
   });
 });
 
@@ -99,7 +117,11 @@ router.get("/amazon", (req, res) => {
       console.error(err);
       return res.status(500).send("Error html file");
     }
-    res.render("amazon", { htmlContent: data, header: res.locals.header });
+    res.render("amazon", {
+      htmlContent: data,
+      header: res.locals.header,
+      serverUrl: config.serverUrl,
+    });
   });
 });
 
