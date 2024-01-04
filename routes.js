@@ -51,7 +51,7 @@ router.get("/bing", (req, res) => {
 
 router.post("/bing-desktop-search", limiter, (req, res) => {
   const { key } = req.body;
-  res.send("App start");
+  res.send("Search start, please wait.");
   bing.startSearch("desktop", "new", key);
 });
 
@@ -79,7 +79,7 @@ router.get("/google", (req, res) => {
 });
 
 router.post("/google-desktop-search", limiter, (req, res) => {
-  res.send("App start");
+  res.send("Search start, please wait.");
   google.searchGoogle(req.body.key);
 });
 
@@ -105,7 +105,7 @@ router.get("/bookingcom", (req, res) => {
 });
 
 router.post("/bookingcom-desktop-search", (req, res) => {
-  res.send("App start");
+  res.send("Start scraping, please wait.");
   bookingcom.startScrape("desktop");
 });
 
@@ -126,7 +126,7 @@ router.get("/amazon", (req, res) => {
 });
 
 router.post("/amazon-desktop-search", (req, res) => {
-  res.send("App start");
+  res.send("Start scraping, please wait.");
   amazon.startScrape("desktop");
 });
 

@@ -136,3 +136,28 @@ button {
   width: 200px;
   padding: 8px;
 }
+
+.resultA {
+  color: #333;
+  text-decoration: none;
+}
+
+.resultRow {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 4px;
+}
+
+.resultRowScroll {
+  color: green;
+  padding: 12px;
+  font-weight: bold;
+  padding-left: 0;
+}
+
+.resultRowStop {
+  color: red;
+  padding: 12px;
+  font-weight: bold;
+  padding-left: 0;
+}

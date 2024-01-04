@@ -25,21 +25,24 @@ const searchGoogle = async (key) => {
   await page.setUserAgent(
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36"
   );
+  await page.setDefaultNavigationTimeout(30000);
   await page.goto(`https://www.google.com/search?q=${key}&gl=it&hl=it`);
 
+  console.clear();
+  console.log("Node Google search scraper by Davide Balice");
+  console.log(`<div class="resultRowScroll">Start search...</div>`);
+
   while (scrollY < scrollLimit) {
-    console.log("ciclo:" + scrollY + " " + scrollLimit);
+    console.clear();
 
     const html = await page.content();
-    // console.log(html);
     const $ = cheerio.load(html);
 
     currentHeight = await page.evaluate(() => document.body.scrollHeight);
-    console.log("currentHeight:" + currentHeight);
 
     await page.waitForSelector("#L2AGLb");
 
-    // Ora clicchiamo sul pulsante
+    //Click sul pulsante
     await page.evaluate(() => {
       // Selezioniamo il pulsante tramite l'ID
       const button = document.getElementById("L2AGLb");
@@ -80,8 +83,16 @@ const searchGoogle = async (key) => {
         displayedLink: displayedLinks[i],
       };
       if (!allTitles.includes(titles[i])) {
-        console.log("<b>titles[i]</b>");
-        console.log(titles[i]);
+        if (snippets[i] !== undefined) {
+          console.log(
+            `<div class="resultRow"><a href="${links[i]}" target="_blank" class="resultA"><b style="color:#333">${titles[i]}</b><br /><span style="color:#333">${snippets[i]}</span></a></div>`
+          );
+        } else {
+          console.log(
+            `<div class="resultRow"><a href="${links[i]}" target="_blank" class="resultA"><b>${titles[i]}</b></a></div>`
+          );
+        }
+
         allTitles.push(titles[i]);
       }
     }
@@ -92,19 +103,15 @@ const searchGoogle = async (key) => {
 
     await page.waitForTimeout(2000);
 
-    const newHeight = await page.evaluate(
-      () => window.document.body.scrollHeight
-    );
-    console.log("Nuova altezza della pagina:", newHeight);
-
     //Aggiornamento posizione pagina
     scrollY = scrollY + 4000;
-
-    console.log("scrollY" + scrollY);
-    console.log("scrollLimit" + scrollLimit);
+    if (scrollY < scrollLimit)
+      console.log(`<div class="resultRowScroll">Scroll page...</div>`);
 
     await page.waitForTimeout(3000);
   }
+  await page.waitForTimeout(1000);
+  console.log(`<div class="resultRowStop">Search finished</div>`);
 };
 
 module.exports = { searchGoogle };

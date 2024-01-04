@@ -10,8 +10,10 @@
     <div class="main">
       <img src="./assets/img/bing2.png" />
       <p class="paragraph">
-        Make a Bing search and view the result. Scaper make a scroll page to
-        load more result.<br />
+        Make a Bing search and view the result.
+        <br />
+        Scraper load content of the first 3 page.
+        <br />
         <strong>Important:</strong> The scraper have a limit to avoid ip ban.
       </p>
       <form id="dataForm">
@@ -36,7 +38,7 @@
 
         socket.onmessage = function (event) {
           const logMessage = document.createElement("div");
-          logMessage.textContent = event.data;
+          logMessage.innerHTML = event.data;
           logContainer.appendChild(logMessage);
         };
 
@@ -70,7 +72,11 @@
               body: JSON.stringify({ key: inputValue }),
             })
               .then((response) => response.text())
-              .then((message) => console.log(message))
+              .then((message) => {
+                const logMessage = document.createElement("div");
+                logMessage.innerHTML = message;
+                logContainer.appendChild(logMessage);
+              })
               .catch((err) => console.error(err));
           }
         }
