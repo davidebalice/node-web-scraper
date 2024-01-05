@@ -45,8 +45,7 @@ async function startScrape(typeSearch, mode, userId, password) {
 
   console.clear();
   console.log(" ");
-  console.log("Amazon.it scraping. ");
-  console.log("(C) 2023 By Davide Balice V. 1.03.");
+  console.log("Amazon.it scraping By Davide Balice.");
   console.log(" ");
   console.log(" ");
   if (typeSearch == "desktop") {
@@ -70,12 +69,12 @@ async function startScrape(typeSearch, mode, userId, password) {
 
   page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
-
+const key = "videogiochi";
 
 
     // navigate to a website and set the viewport
     await page.setViewport({ width: 1280, height: 800 });
-    await page.goto("https://www.amazon.it/s?k=playstation&__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=L8FRLM64UZ0S&sprefix=playstation%2Caps%2C125&ref=nb_sb_noss_1", {
+    await page.goto(`https://www.amazon.it/s?k=${key}&__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=L8FRLM64UZ0S&sprefix=${key}%2Caps%2C125&ref=nb_sb_noss_1`, {
       timeout: 3000000
     });
 

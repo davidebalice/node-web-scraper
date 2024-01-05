@@ -23,7 +23,6 @@ async function startSearch(typeSearch, mode, key) {
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
   const browser = await puppeteer.launch({ headless: mode });
   const page = await browser.newPage();
-  const fs = require("fs");
 
   let n;
 

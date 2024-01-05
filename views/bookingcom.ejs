@@ -9,15 +9,27 @@
   <body>
     <% if (header) { %> <%- header %> <% } %>
     <div class="main">
-      <h1>Booking.com search</h1>
+      <img src="./assets/img/bookingcom2.png" />
+      <p class="paragraph">
+        Make a scrap of Booking.com and read the result.
+        <br />
+        Scraper load content of the first 3 page.
+        <br />
+        <strong>Important:</strong> The scraper have a limit to avoid ip ban. No
+        data are stored, only for study purpose.
+      </p>
       <form id="dataForm">
-        <input type="email" id="email" />
-        <input type="password" id="password" />
-        <button type="submit">Invia</button>
+        <input
+          type="text"
+          id="key"
+          class="searchInput"
+          placeholder="Insert a location"
+        />
+        <input type="date" id="datein" class="searchInput" />
+        <input type="date" id="dateout" class="searchInput" />
+        <button type="submit" id="searchButton">Search</button>
       </form>
 
-      <button onclick="startDesktopSearch()">Avvia</button>
-      <button onclick="stopConnection()">Stop</button>
       <div id="logContainer">
         <b>Output:</b>
         <br /><br />
@@ -34,20 +46,49 @@
           logContainer.appendChild(logMessage);
         };
 
+        var searchButton = document.getElementById("searchButton");
+
+        searchButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          startDesktopSearch();
+        });
+
         function startDesktopSearch() {
-          fetch("/bookingcom-desktop-search", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
-            .then((response) => response.text())
-            .then((message) => {
-              const logMessage = document.createElement("div");
-              logMessage.innerHTML = message;
-              logContainer.appendChild(logMessage);
-            })
-            .catch((err) => console.error(err));
+          const inputValue = document.getElementById("key").value;
+          const datein = document.getElementById("datein").value;
+          const dateout = document.getElementById("dateout").value;
+          searchButton.disabled = true;
+          searchButton.disabled = true;
+          searchButton.style.background = "gray";
+
+          // Dopo 20 secondi, riattiva il pulsante e imposta lo sfondo blu
+          setTimeout(function () {
+            searchButton.disabled = false;
+            searchButton.style.background = "#027bff";
+          }, 20000);
+
+          if (inputValue === "" || datein === "" || dateout === "") {
+            alert("Fill location and date input");
+          } else {
+            if (datein > dateout) {
+              alert("Error: Date in > Date out");
+            } else {
+              fetch("/bookingcom-desktop-search", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ key: inputValue, datein, dateout }),
+              })
+                .then((response) => response.text())
+                .then((message) => {
+                  const logMessage = document.createElement("div");
+                  logMessage.innerHTML = message;
+                  logContainer.appendChild(logMessage);
+                })
+                .catch((err) => console.error(err));
+            }
+          }
         }
 
         function stopConnection() {

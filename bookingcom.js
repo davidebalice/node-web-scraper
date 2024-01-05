@@ -6,8 +6,6 @@ const wsPort = 8003;
 const unirest = require("unirest");
 const cheerio = require("cheerio");
 
-let shouldRun = true;
-
 const wss = new WebSocket.Server({ port: wsPort });
 wss.on("connection", (ws) => {
   const originalConsoleLog = console.log;
@@ -20,7 +18,14 @@ wss.on("connection", (ws) => {
   };
 });
 
-async function startScrape(typeSearch, mode, userId, password) {
+async function startScrape(
+  typeSearch,
+  mode,
+  location,
+  checkinDate,
+  checkoutDate
+) {
+  const allTitles = [];
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
   const browser = await puppeteer.launch({ headless: mode });
   const page = await browser.newPage();
@@ -45,19 +50,6 @@ async function startScrape(typeSearch, mode, userId, password) {
   });
 
   console.clear();
-  console.log(" ");
-  console.log("Booking.com scraping. ");
-  console.log("(C) 2023 By Davide Balice V. 1.03.");
-  console.log(" ");
-  console.log(" ");
-  if (typeSearch == "desktop") {
-    console.log("login dektop started, wait...");
-  } else {
-    console.log("login mobile started, wait...");
-  }
-
-  // Vado alla pagina di Login;
-  await page.goto("https://www.booking.com");
 
   // Avviso che siamo pronti a partire con la ricerca;
   console.clear();
@@ -71,14 +63,9 @@ async function startScrape(typeSearch, mode, userId, password) {
 
   page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
-  const checkinDate = "2024-02-10";
-  const checkoutDate = "2024-02-17";
-
   await page.goto(
-    `https://www.booking.com/searchresults.html?aid=304142&label=gen173nr-1FCAEoggI46AdIM1gEaKcBiAEBmAExuAEHyAEM2AEB6AEB-AECiAIBqAIDuALK69aqBsACAdICJGIyNTBjMTkyLWVjOGQtNDZhOC1iMzExLWM4MmYzZTNiYzlhNdgCBeACAQ&checkin=${checkinDate}&checkout=${checkoutDate}&dest_id=20014181&dest_type=city&nflt=ht_id%3D204&group_adults=0&req_adults=0&no_rooms=0&group_children=0&req_children=0`
+    `https://www.booking.com/searchresults.it.html?ss=${location}&ssne=${location}&ssne_untouched=${location}&label=gen173nr-1BCAEoggI46AdIM1gEaHGIAQGYARS4ARfIAQzYAQHoAQGIAgGoAgO4AsyR4KwGwAIB0gIkM2EwYzI2Y2UtZWIzNC00NDAzLWE3NWQtNzU1N2NlM2RiN2Y02AIF4AIB&sid=abe094b117223d06babb0564c512c7ee&aid=304142&lang=it&sb=1&src_elem=sb&src=searchresults&dest_id=&dest_type=city&checkin=${checkinDate}&checkout=${checkoutDate}&group_adults=2&no_rooms=1&group_children=0`
   );
-
-  //https://www.booking.com/searchresults.html?aid=304142&label=gen173nr-1FCAEoggI46AdIM1gEaKcBiAEBmAExuAEHyAEM2AEB6AEB-AECiAIBqAIDuALK69aqBsACAdICJGIyNTBjMTkyLWVjOGQtNDZhOC1iMzExLWM4MmYzZTNiYzlhNdgCBeACAQ&checkin=2024-02-10&checkout=2024-02-17&dest_id=20014181&dest_type=city&nflt=ht_id%3D204&group_adults=0&req_adults=0&no_rooms=0&group_children=0&req_children=0
 
   const htmlContent = await page.evaluate(
     () => document.documentElement.outerHTML
@@ -86,57 +73,103 @@ async function startScrape(typeSearch, mode, userId, password) {
 
   //console.log(htmlContent);
 
-  await page.waitForSelector('div[data-testid="property-card"]');
+  //Numero massimo di pagine da visitare
+  const maxPages = 4;
 
-  // Extract hotel data
-  const hotels = await page.$$('div[data-testid="property-card"]');
-  console.log(`There are: ${hotels.length} hotels.`);
+  console.clear();
+  console.log(" ");
+  console.log("Node Booking.com scraper by Davide Balice");
+  console.log(`<div class="resultRowScroll">Start search...</div>`);
 
-  if (hotels.length > 0) {
-    console.log(
-      'La pagina ha trovato almeno un elemento div[data-testid="property-card"].'
+  //cicla le pagine
+  for (let pageNum = 0; pageNum < maxPages; pageNum++) {
+    await page.waitForSelector('div[data-testid="property-card"]');
+
+    //Estrai data strutture ricettive
+    const hotels = await page.$$('div[data-testid="property-card"]');
+    console.log(`There are: ${hotels.length} hotels.`);
+
+    if (hotels.length > 0) {
+      console.log(
+        'La pagina ha trovato almeno un elemento div[data-testid="property-card"].'
+      );
+    } else {
+      console.log(
+        'La pagina non ha trovato nessun elemento div[data-testid="property-card"].'
+      );
+    }
+
+    const hotelsList = [];
+    for (const hotel of hotels) {
+      const hotelDict = {};
+      const imgElement = await hotel.$('div[data-testid="property-card"] img');
+      const imgSrc = await (await imgElement.getProperty("src")).jsonValue();
+      hotelDict["image"] = imgSrc;
+
+      hotelDict["hotel"] = await hotel.$eval(
+        'div[data-testid="title"]',
+        (el) => el.innerText
+      );
+      try {
+        hotelDict["price"] = await hotel.$eval(
+          'span[data-testid="price-and-discounted-price"]',
+          (el) => el.innerText
+        );
+      } catch (error) {
+        hotelDict["price"] = " - ";
+      }
+
+      try {
+        hotelDict["score"] = await hotel.$eval(
+          'div[data-testid="review-score"] > div:nth-child(1)',
+          (el) => el.innerText
+        );
+      } catch (error) {
+        hotelDict["score"] = " - ";
+      }
+      hotelsList.push(hotelDict);
+    }
+
+    hotelsList.map((hotel, index) => {
+      if (!allTitles.includes(hotel.hotel)) {
+        allTitles.push(hotel.hotel);
+        console.log(`Hotel ${index + 1}:`);
+        console.log("Name:", hotel.hotel);
+        console.log("Price:", hotel.price);
+        console.log("Score:", hotel.score);
+        console.log("Image:", hotel.image);
+        console.log("--------------------------------");
+      }
+    });
+
+    const nextPageLink = await page.waitForSelector(
+      'button[aria-label="pagina successiva"]'
     );
-  } else {
-    console.log(
-      'La pagina non ha trovato nessun elemento div[data-testid="property-card"].'
-    );
+    console.log("Pulsante trovato");
+
+    if (nextPageLink && pageNum < maxPages - 1) {
+      console.log(
+        `<div class="resultRowScroll">Caricamento prossima pagina...</div>`
+      );
+      await page.evaluate((link) => link.click(), nextPageLink);
+      console.log("Pulsante cliccato");
+      await page.waitForTimeout(5000);
+      //await page.waitForNavigation({ waitUntil: "domcontentloaded" });
+    } else {
+      //break;
+    }
   }
 
-  const hotelsList = [];
-  for (const hotel of hotels) {
-    const hotelDict = {};
-    const imgElement = await hotel.$('div[data-testid="property-card"] img');
-    const imgSrc = await (await imgElement.getProperty("src")).jsonValue();
-    hotelDict["image"] = imgSrc;
-
-    hotelDict["hotel"] = await hotel.$eval(
-      'div[data-testid="title"]',
-      (el) => el.innerText
-    );
-    hotelDict["price"] = await hotel.$eval(
-      'span[data-testid="price-and-discounted-price"]',
-      (el) => el.innerText
-    );
-    hotelDict["score"] = await hotel.$eval(
-      'div[data-testid="review-score"] > div:nth-child(1)',
-      (el) => el.innerText
-    );
-    hotelsList.push(hotelDict);
-  }
-
-  hotelsList.map((hotel, index) => {
-    console.log(`Hotel ${index + 1}:`);
-    console.log("Name:", hotel.hotel);
-    console.log("Price:", hotel.price);
-    console.log("Score:", hotel.score);
-    console.log("Image:", hotel.image);
-    console.log("--------------------------------");
-  });
-
+  /*
+  //estrazione dei risultati su file csv
   const csvData = hotelsList
     .map((hotel) => Object.values(hotel).join(","))
     .join("\n");
   fs.writeFileSync("hotels_list.csv", csvData);
+  */
+
+  console.log(`<div class="resultRowStop">Search finished</div>`);
+  // Aspetto 2 secondi e chiudo tutto;
 
   // Aspetto 2 secondi e chiudo tutto;
   await page.waitForTimeout(2000);
@@ -144,8 +177,4 @@ async function startScrape(typeSearch, mode, userId, password) {
   console.clear();
 }
 
-async function stopSearch() {
-  shouldRun = false;
-}
-
-module.exports = { startScrape, stopSearch };
+module.exports = { startScrape };

@@ -106,7 +106,13 @@ router.get("/bookingcom", (req, res) => {
 
 router.post("/bookingcom-desktop-search", (req, res) => {
   res.send("Start scraping, please wait.");
-  bookingcom.startScrape("desktop");
+  bookingcom.startScrape(
+    "desktop",
+    "new",
+    req.body.key,
+    req.body.datein,
+    req.body.dateout
+  );
 });
 
 router.get("/amazon", (req, res) => {
