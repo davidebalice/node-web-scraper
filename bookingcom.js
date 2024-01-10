@@ -1,10 +1,7 @@
 const puppeteer = require("puppeteer");
 const express = require("express");
 const WebSocket = require("ws");
-const app = express();
 const wsPort = 8003;
-const unirest = require("unirest");
-const cheerio = require("cheerio");
 
 const wss = new WebSocket.Server({ port: wsPort });
 wss.on("connection", (ws) => {
@@ -29,7 +26,6 @@ async function startScrape(
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
   const browser = await puppeteer.launch({ headless: mode });
   const page = await browser.newPage();
-  const fs = require("fs");
 
   // A seconda della ricerca apro o meno l'emulazione iPhone X;
   if (typeSearch == "desktop") {
@@ -55,12 +51,6 @@ async function startScrape(
   console.clear();
   console.log(" ");
 
-  if (typeSearch == "desktop") {
-    console.log("inzio ricerca desktop, attendere...");
-  } else {
-    console.log("inzio ricerca mobile, attendere...");
-  }
-
   page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
   await page.goto(
@@ -70,7 +60,6 @@ async function startScrape(
   const htmlContent = await page.evaluate(
     () => document.documentElement.outerHTML
   );
-
   //console.log(htmlContent);
 
   //Numero massimo di pagine da visitare
@@ -87,16 +76,9 @@ async function startScrape(
 
     //Estrai data strutture ricettive
     const hotels = await page.$$('div[data-testid="property-card"]');
-    console.log(`There are: ${hotels.length} hotels.`);
 
-    if (hotels.length > 0) {
-      console.log(
-        'La pagina ha trovato almeno un elemento div[data-testid="property-card"].'
-      );
-    } else {
-      console.log(
-        'La pagina non ha trovato nessun elemento div[data-testid="property-card"].'
-      );
+    if (hotels.length === 0) {
+      console.log("La pagina non ha trovato nessun elemento ");
     }
 
     const hotelsList = [];
@@ -110,6 +92,11 @@ async function startScrape(
         'div[data-testid="title"]',
         (el) => el.innerText
       );
+      hotelDict["link"] = await hotel.$eval(
+        'div[data-testid="property-card"] a',
+        (el) => el.href
+      );
+
       try {
         hotelDict["price"] = await hotel.$eval(
           'span[data-testid="price-and-discounted-price"]',
@@ -133,19 +120,20 @@ async function startScrape(
     hotelsList.map((hotel, index) => {
       if (!allTitles.includes(hotel.hotel)) {
         allTitles.push(hotel.hotel);
-        console.log(`Hotel ${index + 1}:`);
-        console.log("Name:", hotel.hotel);
-        console.log("Price:", hotel.price);
-        console.log("Score:", hotel.score);
-        console.log("Image:", hotel.image);
-        console.log("--------------------------------");
+        const formattedPrice = hotel.price.toLocaleString("it-IT", {
+          style: "currency",
+          minimumFractionDigits: 2,
+        });
+
+        console.log(
+          `<a href="${hotel.link}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${hotel.image}" class="hotelImg"><div class="resultHotelText"><span><b>${hotel.hotel}</b><br /><span style="color:#333">rating: <b>${hotel.score}</b></span></span><span style="color:#333">${formattedPrice}</span></div></div></a>`
+        );
       }
     });
 
     const nextPageLink = await page.waitForSelector(
       'button[aria-label="pagina successiva"]'
     );
-    console.log("Pulsante trovato");
 
     if (nextPageLink && pageNum < maxPages - 1) {
       console.log(
@@ -169,7 +157,6 @@ async function startScrape(
   */
 
   console.log(`<div class="resultRowStop">Search finished</div>`);
-  // Aspetto 2 secondi e chiudo tutto;
 
   // Aspetto 2 secondi e chiudo tutto;
   await page.waitForTimeout(2000);

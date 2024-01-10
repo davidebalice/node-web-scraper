@@ -161,3 +161,24 @@ button {
   font-weight: bold;
   padding-left: 0;
 }
+
+.hotelImg {
+  width: 150px;
+  border-radius: 6px;
+}
+
+.resultHotelRow {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 4px;
+  display: flex;
+  gap: 10px;
+}
+
+.resultHotelText {
+  padding: 10px;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}

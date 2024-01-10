@@ -133,7 +133,7 @@ router.get("/amazon", (req, res) => {
 
 router.post("/amazon-desktop-search", (req, res) => {
   res.send("Start scraping, please wait.");
-  amazon.startScrape("desktop");
+  amazon.startScrape("desktop", "new", req.body.key);
 });
 
 module.exports = router;

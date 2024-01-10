@@ -11,13 +11,15 @@
     <div class="main">
       <h1>Amazon scrape</h1>
       <form id="dataForm">
-        <input type="email" id="email" />
-        <input type="password" id="password" />
-        <button type="submit">Invia</button>
+        <input
+          type="text"
+          id="key"
+          class="searchInput"
+          placeholder="Insert a key"
+        />
+        <button type="submit" id="searchButton">Search</button>
       </form>
 
-      <button onclick="startDesktopSearch()">Avvia</button>
-      <button onclick="stopConnection()">Stop</button>
       <div id="logContainer">
         <b>Output:</b>
         <br /><br />
@@ -34,20 +36,43 @@
           logContainer.appendChild(logMessage);
         };
 
+        var searchButton = document.getElementById("searchButton");
+
+        searchButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          startDesktopSearch();
+        });
+
         function startDesktopSearch() {
-          fetch("/amazon-desktop-search", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
-            .then((response) => response.text())
-            .then((message) => {
-              const logMessage = document.createElement("div");
-              logMessage.innerHTML = message;
-              logContainer.appendChild(logMessage);
+          const inputValue = document.getElementById("key").value;
+          searchButton.disabled = true;
+          searchButton.disabled = true;
+          searchButton.style.background = "gray";
+
+          // Dopo 20 secondi, riattiva il pulsante e imposta lo sfondo blu
+          setTimeout(function () {
+            searchButton.disabled = false;
+            searchButton.style.background = "#027bff";
+          }, 20000);
+
+          if (inputValue === "") {
+            alert("Fill key input");
+          } else {
+            fetch("/amazon-desktop-search", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ key: inputValue }),
             })
-            .catch((err) => console.error(err));
+              .then((response) => response.text())
+              .then((message) => {
+                const logMessage = document.createElement("div");
+                logMessage.innerHTML = message;
+                logContainer.appendChild(logMessage);
+              })
+              .catch((err) => console.error(err));
+          }
         }
 
         function stopConnection() {
