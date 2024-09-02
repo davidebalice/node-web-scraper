@@ -39,7 +39,7 @@
         const serverUrl = "<%= serverUrl %>";
         const logContainer = document.getElementById("logContainer");
         logContainer.innerHtml="<b>Output:</b><br /><br />";
-        const socket = new WebSocket(`ws://${serverUrl}:8003`);
+        const socket = new WebSocket(`${serverUrl}`);
 
         socket.onmessage = function (event) {
           const logMessage = document.createElement("div");

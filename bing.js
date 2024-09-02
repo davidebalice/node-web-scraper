@@ -1,27 +1,68 @@
 const puppeteer = require("puppeteer");
-const express = require("express");
 const WebSocket = require("ws");
-const app = express();
-const wsPort = 8001;
+const { wss } = require("./index.js");
+const fs = require("fs");
+const path = require("path");
 
-let shouldRun = true;
+// Funzione per scrivere un messaggio nel file di log
+const logFilePath = path.join(__dirname, "app.log");
+function logToFile(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `${timestamp} - ${message}\n`;
 
-const wss = new WebSocket.Server({ port: wsPort });
+  fs.appendFile(logFilePath, logMessage, (err) => {
+    if (err) {
+      console.error("Errore durante la scrittura del log:", err);
+    }
+  });
+}
+
 wss.on("connection", (ws) => {
-  const originalConsoleLog = console.log;
+ 
 
-  console.log = function (...args) {
-    const message = args.join(" ");
-    originalConsoleLog.apply(console, args);
-    // Invia i log al client HTML
+  ws.on("message", (message) => {
     ws.send(message);
-  };
+  });
+
+  ws.on("error", (error) => {
+    ws.send("WebSocket error:", error);
+  });
+
+  ws.on("message", (message) => {
+    console.log("Received message:", message);
+    ws.send(message);
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+
+  ws.on("close", () => {
+    ws.send("disconnetted");
+  });
 });
+
+
+// Utilizza i WebSocket per inviare messaggi ai client connessi
+function sendToWebSocket(message) {
+  if (wss && wss.clients.size > 0) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+}
+
 
 async function startSearch(typeSearch, mode, key) {
   const allTitles = [];
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
-  const browser = await puppeteer.launch({ headless: mode });
+  //const browser = await puppeteer.launch({ headless: mode });
+  const browser = await puppeteer.launch({
+    headless: mode,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const page = await browser.newPage();
 
   let n;
@@ -36,9 +77,9 @@ async function startSearch(typeSearch, mode, key) {
   }
 
   console.clear();
-  console.log(" ");
-  console.log("Node Bing search scraper by Davide Balice");
-  console.log(`<div class="resultRowScroll">Start search...</div>`);
+  sendToWebSocket(" ");
+  sendToWebSocket("Node Bing search scraper by Davide Balice");
+  sendToWebSocket(`<div class="resultRowScroll">Start search...</div>`);
 
   await page.setDefaultNavigationTimeout(10000);
   await page.goto(
@@ -69,11 +110,11 @@ async function startSearch(typeSearch, mode, key) {
       if (!allTitles.includes(item.title)) {
         if (item.title !== undefined && item.title !== "") {
           if (item.snippet !== undefined) {
-            console.log(
+            sendToWebSocket(
               `<div class="resultRow"><a href="${item.link}" target="_blank" class="resultA"><b style="color:#333">${item.title}</b><br /><span style="color:#333">${item.snippet}</span></a></div>`
             );
           } else {
-            console.log(
+            sendToWebSocket(
               `<div class="resultRow"><a href="${item.link}" target="_blank" class="resultA"><b>${item.title}</b></a></div>`
             );
           }
@@ -86,7 +127,7 @@ async function startSearch(typeSearch, mode, key) {
 
     const nextPageLink = await page.$("a.sb_pagN");
     if (nextPageLink && pageNum < maxPages - 1) {
-      console.log(
+      sendToWebSocket(
         `<div class="resultRowScroll">Caricamento prossima pagina...</div>`
       );
       await page.evaluate((link) => link.click(), nextPageLink);
@@ -95,7 +136,7 @@ async function startSearch(typeSearch, mode, key) {
       //break;
     }
   }
-  console.log(`<div class="resultRowStop">Search finished</div>`);
+  sendToWebSocket(`<div class="resultRowStop">Search finished</div>`);
   // Aspetto 2 secondi e chiudo tutto;
   await page.waitForTimeout(2000);
   await browser.close();

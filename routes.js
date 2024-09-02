@@ -9,6 +9,19 @@ const rateLimit = require("express-rate-limit");
 const fs = require("fs");
 const config = require("./config");
 
+// Funzione per scrivere un messaggio nel file di log
+const logFilePath = path.join(__dirname, "app_routes.log");
+function logToFile(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `${timestamp} - ${message}\n`;
+
+  fs.appendFile(logFilePath, logMessage, (err) => {
+    if (err) {
+      console.error("Errore durante la scrittura del log:", err);
+    }
+  });
+}
+
 //impostazione di un limiter per evitare uso eccessivo ed eventuali ban dell'ip
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -27,6 +40,7 @@ router.get("/", (req, res) => {
     res.render("index", {
       htmlContent: data,
       header: res.locals.header,
+      footer: res.locals.footer,
       serverUrl: config.serverUrl,
     });
   });
@@ -44,6 +58,7 @@ router.get("/bing", (req, res) => {
     res.render("bing", {
       htmlContent: data,
       header: res.locals.header,
+      footer: res.locals.footer,
       serverUrl: config.serverUrl,
     });
   });
@@ -73,14 +88,23 @@ router.get("/google", (req, res) => {
     res.render("google", {
       htmlContent: data,
       header: res.locals.header,
+      footer: res.locals.footer,
       serverUrl: config.serverUrl,
     });
   });
 });
 
-router.post("/google-desktop-search", limiter, (req, res) => {
-  res.send("Search start, please wait.");
-  google.searchGoogle(req.body.key);
+
+router.post("/google-desktop-search", limiter, async (req, res) => {
+  await google
+    .searchGoogle(req.body.key)
+    .then(() => {
+      res.send("Search start, please wait google.");
+    })
+    .catch((err) => {
+      res.status(500).send("Errore durante l'esecuzione della ricerca" + err);
+    });
+  res.send("Search start, please wait google.");
 });
 
 router.post("/google-search-stop", (req, res) => {
@@ -99,6 +123,7 @@ router.get("/bookingcom", (req, res) => {
     res.render("bookingcom", {
       htmlContent: data,
       header: res.locals.header,
+      footer: res.locals.footer,
       serverUrl: config.serverUrl,
     });
   });
@@ -126,6 +151,7 @@ router.get("/amazon", (req, res) => {
     res.render("amazon", {
       htmlContent: data,
       header: res.locals.header,
+      footer: res.locals.footer,
       serverUrl: config.serverUrl,
     });
   });

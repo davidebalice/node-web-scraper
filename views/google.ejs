@@ -35,7 +35,7 @@
       <script>
         const serverUrl = "<%= serverUrl %>";
         const logContainer = document.getElementById("logContainer");
-        const socket = new WebSocket(`ws://${serverUrl}:8002`);
+        const socket = new WebSocket(`${serverUrl}`);
 
         socket.onmessage = function (event) {
           const logMessage = document.createElement("div");
@@ -74,6 +74,7 @@
             })
               .then((response) => response.text())
               .then((message) => {
+                console.log(message);
                 const logMessage = document.createElement("div");
                 logMessage.innerHTML = message;
                 logContainer.appendChild(logMessage);

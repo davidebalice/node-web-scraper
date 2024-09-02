@@ -1,22 +1,69 @@
 const puppeteer = require("puppeteer");
 const WebSocket = require("ws");
-const wsPort = 8004;
+const { wss } = require("./index.js");
+const fs = require("fs");
+const path = require("path");
 
-const wss = new WebSocket.Server({ port: wsPort });
+// Funzione per scrivere un messaggio nel file di log
+const logFilePath = path.join(__dirname, "app.log");
+function logToFile(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `${timestamp} - ${message}\n`;
+
+  fs.appendFile(logFilePath, logMessage, (err) => {
+    if (err) {
+      console.error("Errore durante la scrittura del log:", err);
+    }
+  });
+}
+
 wss.on("connection", (ws) => {
-  const originalConsoleLog = console.log;
+ 
 
-  console.log = function (...args) {
-    const message = args.join(" ");
-    originalConsoleLog.apply(console, args);
-    // Invia i log al client HTML
+  ws.on("message", (message) => {
     ws.send(message);
-  };
+  });
+
+  ws.on("error", (error) => {
+    ws.send("WebSocket error:", error);
+  });
+
+  ws.on("message", (message) => {
+    console.log("Received message:", message);
+    ws.send(message);
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+
+  ws.on("close", () => {
+    ws.send("disconnetted");
+  });
 });
+
+
+// Utilizza i WebSocket per inviare messaggi ai client connessi
+function sendToWebSocket(message) {
+  if (wss && wss.clients.size > 0) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+}
+
+
 
 async function startScrape(typeSearch, mode, key) {
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
-  const browser = await puppeteer.launch({ headless: mode });
+  //const browser = await puppeteer.launch({ headless: mode });
+   const browser = await puppeteer.launch({
+    headless: mode,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
+
   const page = await browser.newPage();
 
   // A seconda della ricerca apro o meno l'emulazione iPhone X;
@@ -38,10 +85,12 @@ async function startScrape(typeSearch, mode, key) {
   });
 
   console.clear();
-  console.log(" ");
-  console.log("Amazon.it scraping By Davide Balice.");
-  console.log(" ");
-  console.log(" ");
+
+
+  sendToWebSocket(" ");
+  sendToWebSocket("Amazon.it scraping By Davide Balice.");
+  sendToWebSocket(" ");
+  sendToWebSocket(" ");
 
   // Avviso che siamo pronti a partire con la ricerca;
   console.clear();
@@ -95,7 +144,7 @@ async function startScrape(typeSearch, mode, key) {
   });
 
   await products.forEach((product) => {
-    console.log(
+    sendToWebSocket(
       `<a href="${product.url}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${product.image}" class="hotelImg"><div class="resultHotelText"><span><b>${product.name}</b><br /></span><span style="color:#333">€ ${product.price}</span></div></div></a>`
     );
   });

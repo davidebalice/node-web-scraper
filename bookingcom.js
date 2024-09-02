@@ -1,19 +1,57 @@
 const puppeteer = require("puppeteer");
-const express = require("express");
 const WebSocket = require("ws");
-const wsPort = 8003;
+const { wss } = require("./index.js");
+const fs = require("fs");
+const path = require("path");
 
-const wss = new WebSocket.Server({ port: wsPort });
+// Funzione per scrivere un messaggio nel file di log
+const logFilePath = path.join(__dirname, "app.log");
+function logToFile(message) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `${timestamp} - ${message}\n`;
+
+  fs.appendFile(logFilePath, logMessage, (err) => {
+    if (err) {
+      console.error("Errore durante la scrittura del log:", err);
+    }
+  });
+}
+
 wss.on("connection", (ws) => {
-  const originalConsoleLog = console.log;
+ 
 
-  console.log = function (...args) {
-    const message = args.join(" ");
-    originalConsoleLog.apply(console, args);
-    // Invia i log al client HTML
+  ws.on("message", (message) => {
     ws.send(message);
-  };
+  });
+
+  ws.on("error", (error) => {
+    ws.send("WebSocket error:", error);
+  });
+
+  ws.on("message", (message) => {
+    console.log("Received message:", message);
+    ws.send(message);
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+
+  ws.on("close", () => {
+    ws.send("disconnetted");
+  });
 });
+
+// Utilizza i WebSocket per inviare messaggi ai client connessi
+function sendToWebSocket(message) {
+  if (wss && wss.clients.size > 0) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
+}
 
 async function startScrape(
   typeSearch,
@@ -24,7 +62,11 @@ async function startScrape(
 ) {
   const allTitles = [];
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
-  const browser = await puppeteer.launch({ headless: mode });
+  //const browser = await puppeteer.launch({ headless: mode });
+  const browser = await puppeteer.launch({
+    headless: mode,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const page = await browser.newPage();
 
   // A seconda della ricerca apro o meno l'emulazione iPhone X;
@@ -49,7 +91,7 @@ async function startScrape(
 
   // Avviso che siamo pronti a partire con la ricerca;
   console.clear();
-  console.log(" ");
+  sendToWebSocket(" ");
 
   page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
@@ -60,15 +102,14 @@ async function startScrape(
   const htmlContent = await page.evaluate(
     () => document.documentElement.outerHTML
   );
-  //console.log(htmlContent);
 
   //Numero massimo di pagine da visitare
   const maxPages = 4;
 
   console.clear();
-  console.log(" ");
-  console.log("Node Booking.com scraper by Davide Balice");
-  console.log(`<div class="resultRowScroll">Start search...</div>`);
+  sendToWebSocket(" ");
+  sendToWebSocket("Node Booking.com scraper by Davide Balice");
+  sendToWebSocket(`<div class="resultRowScroll">Start search...</div>`);
 
   //cicla le pagine
   for (let pageNum = 0; pageNum < maxPages; pageNum++) {
@@ -78,7 +119,7 @@ async function startScrape(
     const hotels = await page.$$('div[data-testid="property-card"]');
 
     if (hotels.length === 0) {
-      console.log("La pagina non ha trovato nessun elemento ");
+      sendToWebSocket("La pagina non ha trovato nessun elemento ");
     }
 
     const hotelsList = [];
@@ -125,7 +166,7 @@ async function startScrape(
           minimumFractionDigits: 2,
         });
 
-        console.log(
+        sendToWebSocket(
           `<a href="${hotel.link}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${hotel.image}" class="hotelImg"><div class="resultHotelText"><span><b>${hotel.hotel}</b><br /><span style="color:#333">rating: <b>${hotel.score}</b></span></span><span style="color:#333">${formattedPrice}</span></div></div></a>`
         );
       }
@@ -136,11 +177,11 @@ async function startScrape(
     );
 
     if (nextPageLink && pageNum < maxPages - 1) {
-      console.log(
+      sendToWebSocket(
         `<div class="resultRowScroll">Caricamento prossima pagina...</div>`
       );
       await page.evaluate((link) => link.click(), nextPageLink);
-      console.log("Pulsante cliccato");
+      sendToWebSocket("Pulsante cliccato");
       await page.waitForTimeout(5000);
       //await page.waitForNavigation({ waitUntil: "domcontentloaded" });
     } else {
@@ -148,15 +189,7 @@ async function startScrape(
     }
   }
 
-  /*
-  //estrazione dei risultati su file csv
-  const csvData = hotelsList
-    .map((hotel) => Object.values(hotel).join(","))
-    .join("\n");
-  fs.writeFileSync("hotels_list.csv", csvData);
-  */
-
-  console.log(`<div class="resultRowStop">Search finished</div>`);
+  sendToWebSocket(`<div class="resultRowStop">Search finished</div>`);
 
   // Aspetto 2 secondi e chiudo tutto;
   await page.waitForTimeout(2000);
