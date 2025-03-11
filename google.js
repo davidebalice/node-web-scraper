@@ -19,8 +19,6 @@ function logToFile(message) {
 }
 
 wss.on("connection", (ws) => {
-
-
   ws.on("message", (message) => {
     ws.send(message);
   });

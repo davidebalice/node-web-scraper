@@ -16,7 +16,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
-    "axios": "^1.4.0",
+    "axios": "^1.8.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cheerio": "^1.0.0-rc.12",
@@ -43,6 +43,7 @@
     "parcel": "^2.8.3",
     "pug": "^3.0.2",
     "puppeteer": "^21.6.1",
+    "react-axios": "^2.0.6",
     "sharp": "^0.32.1",
     "slugify": "^1.6.5",
     "stripe": "^12.3.0",
