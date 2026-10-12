@@ -3,6 +3,7 @@ const WebSocket = require("ws");
 const { wss } = require("./index.js");
 const fs = require("fs");
 const path = require("path");
+const { delay, escapeHtml } = require("./utils");
 
 // Funzione per scrivere un messaggio nel file di log
 const logFilePath = path.join(__dirname, "app.log");
@@ -60,7 +61,7 @@ async function startScrape(typeSearch, mode, key) {
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
   //const browser = await puppeteer.launch({ headless: mode });
    const browser = await puppeteer.launch({
-    headless: mode,
+    headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 
@@ -70,7 +71,7 @@ async function startScrape(typeSearch, mode, key) {
   if (typeSearch == "desktop") {
     n = 2.5;
   } else {
-    const iPhone = puppeteer.devices["iPhone X"];
+    const iPhone = puppeteer.KnownDevices["iPhone X"];
     await page.emulate(iPhone);
     n = 4;
   }
@@ -100,7 +101,7 @@ async function startScrape(typeSearch, mode, key) {
   // navigate to a website and set the viewport
   await page.setViewport({ width: 1280, height: 800 });
   await page.goto(
-    `https://www.amazon.it/s?k=${key}&__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=L8FRLM64UZ0S&sprefix=${key}%2Caps%2C125&ref=nb_sb_noss_1`,
+    `https://www.amazon.it/s?k=${encodeURIComponent(key)}&__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=L8FRLM64UZ0S&sprefix=${encodeURIComponent(key)}%2Caps%2C125&ref=nb_sb_noss_1`,
     {
       timeout: 3000000,
     }
@@ -145,7 +146,7 @@ async function startScrape(typeSearch, mode, key) {
 
   await products.forEach((product) => {
     sendToWebSocket(
-      `<a href="${product.url}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${product.image}" class="hotelImg"><div class="resultHotelText"><span><b>${product.name}</b><br /></span><span style="color:#333">€ ${product.price}</span></div></div></a>`
+      `<a href="${escapeHtml(product.url)}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${escapeHtml(product.image)}" class="hotelImg"><div class="resultHotelText"><span><b>${escapeHtml(product.name)}</b><br /></span><span style="color:#333">€ ${escapeHtml(product.price)}</span></div></div></a>`
     );
   });
 

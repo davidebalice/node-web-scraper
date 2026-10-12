@@ -3,6 +3,7 @@ const WebSocket = require("ws");
 const { wss } = require("./index.js");
 const fs = require("fs");
 const path = require("path");
+const { delay, escapeHtml } = require("./utils");
 
 // Funzione per scrivere un messaggio nel file di log
 const logFilePath = path.join(__dirname, "app.log");
@@ -64,7 +65,7 @@ async function startScrape(
   // Lancio il browser false=vedo l'anteprima, "new"= stealth;
   //const browser = await puppeteer.launch({ headless: mode });
   const browser = await puppeteer.launch({
-    headless: mode,
+    headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
   const page = await browser.newPage();
@@ -73,7 +74,7 @@ async function startScrape(
   if (typeSearch == "desktop") {
     n = 2.5;
   } else {
-    const iPhone = puppeteer.devices["iPhone X"];
+    const iPhone = puppeteer.KnownDevices["iPhone X"];
     await page.emulate(iPhone);
     n = 4;
   }
@@ -96,7 +97,7 @@ async function startScrape(
   page.setDefaultNavigationTimeout(2 * 60 * 1000);
 
   await page.goto(
-    `https://www.booking.com/searchresults.it.html?ss=${location}&ssne=${location}&ssne_untouched=${location}&label=gen173nr-1BCAEoggI46AdIM1gEaHGIAQGYARS4ARfIAQzYAQHoAQGIAgGoAgO4AsyR4KwGwAIB0gIkM2EwYzI2Y2UtZWIzNC00NDAzLWE3NWQtNzU1N2NlM2RiN2Y02AIF4AIB&sid=abe094b117223d06babb0564c512c7ee&aid=304142&lang=it&sb=1&src_elem=sb&src=searchresults&dest_id=&dest_type=city&checkin=${checkinDate}&checkout=${checkoutDate}&group_adults=2&no_rooms=1&group_children=0`
+    `https://www.booking.com/searchresults.it.html?ss=${encodeURIComponent(location)}&ssne=${encodeURIComponent(location)}&ssne_untouched=${encodeURIComponent(location)}&label=gen173nr-1BCAEoggI46AdIM1gEaHGIAQGYARS4ARfIAQzYAQHoAQGIAgGoAgO4AsyR4KwGwAIB0gIkM2EwYzI2Y2UtZWIzNC00NDAzLWE3NWQtNzU1N2NlM2RiN2Y02AIF4AIB&sid=abe094b117223d06babb0564c512c7ee&aid=304142&lang=it&sb=1&src_elem=sb&src=searchresults&dest_id=&dest_type=city&checkin=${encodeURIComponent(checkinDate)}&checkout=${encodeURIComponent(checkoutDate)}&group_adults=2&no_rooms=1&group_children=0`
   );
 
   const htmlContent = await page.evaluate(
@@ -167,7 +168,7 @@ async function startScrape(
         });
 
         sendToWebSocket(
-          `<a href="${hotel.link}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${hotel.image}" class="hotelImg"><div class="resultHotelText"><span><b>${hotel.hotel}</b><br /><span style="color:#333">rating: <b>${hotel.score}</b></span></span><span style="color:#333">${formattedPrice}</span></div></div></a>`
+          `<a href="${escapeHtml(hotel.link)}" target="_blank" class="resultA"><div class="resultHotelRow"><img src="${escapeHtml(hotel.image)}" class="hotelImg"><div class="resultHotelText"><span><b>${escapeHtml(hotel.hotel)}</b><br /><span style="color:#333">rating: <b>${escapeHtml(hotel.score)}</b></span></span><span style="color:#333">${escapeHtml(formattedPrice)}</span></div></div></a>`
         );
       }
     });
@@ -182,7 +183,7 @@ async function startScrape(
       );
       await page.evaluate((link) => link.click(), nextPageLink);
       sendToWebSocket("Pulsante cliccato");
-      await page.waitForTimeout(5000);
+      await delay(5000);
       //await page.waitForNavigation({ waitUntil: "domcontentloaded" });
     } else {
       //break;
@@ -192,7 +193,7 @@ async function startScrape(
   sendToWebSocket(`<div class="resultRowStop">Search finished</div>`);
 
   // Aspetto 2 secondi e chiudo tutto;
-  await page.waitForTimeout(2000);
+  await delay(2000);
   await browser.close();
   console.clear();
 }

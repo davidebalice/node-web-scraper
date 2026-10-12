@@ -4,6 +4,7 @@ const cheerio = require("cheerio");
 const { wss } = require("./index.js");
 const fs = require("fs");
 const path = require("path");
+const { delay, escapeHtml } = require("./utils");
 
 // Funzione per scrivere un messaggio nel file di log
 const logFilePath = path.join(__dirname, "app.log");
@@ -69,7 +70,7 @@ const searchGoogle = async (key) => {
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36"
   );
   await page.setDefaultNavigationTimeout(30000);
-  await page.goto(`https://www.google.com/search?q=${key}&gl=it&hl=it`);
+  await page.goto(`https://www.google.com/search?q=${encodeURIComponent(key)}&gl=it&hl=it`);
 
   console.clear();
   sendToWebSocket("Node Google search scraper by Davide Balice");
@@ -128,11 +129,11 @@ const searchGoogle = async (key) => {
       if (!allTitles.includes(titles[i])) {
         if (snippets[i] !== undefined) {
           sendToWebSocket(
-            `<div class="resultRow"><a href="${links[i]}" target="_blank" class="resultA"><b style="color:#333">${titles[i]}</b><br /><span style="color:#333">${snippets[i]}</span></a></div>`
+            `<div class="resultRow"><a href="${escapeHtml(links[i])}" target="_blank" class="resultA"><b style="color:#333">${escapeHtml(titles[i])}</b><br /><span style="color:#333">${escapeHtml(snippets[i])}</span></a></div>`
           );
         } else {
           sendToWebSocket(
-            `<div class="resultRow"><a href="${links[i]}" target="_blank" class="resultA"><b>${titles[i]}</b></a></div>`
+            `<div class="resultRow"><a href="${escapeHtml(links[i])}" target="_blank" class="resultA"><b>${escapeHtml(titles[i])}</b></a></div>`
           );
         }
 
@@ -144,17 +145,18 @@ const searchGoogle = async (key) => {
       window.scrollTo(0, window.document.body.scrollHeight);
     });
 
-    await page.waitForTimeout(2000);
+    await delay(2000);
 
     //Aggiornamento posizione pagina
     scrollY = scrollY + 4000;
     if (scrollY < scrollLimit)
       sendToWebSocket(`<div class="resultRowScroll">Scroll page...</div>`);
 
-    await page.waitForTimeout(3000);
+    await delay(3000);
   }
-  await page.waitForTimeout(1000);
+  await delay(1000);
   sendToWebSocket(`<div class="resultRowStop">Search finished</div>`);
+  await browser.close();
 };
 
 module.exports = { searchGoogle };

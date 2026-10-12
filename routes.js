@@ -25,7 +25,7 @@ function logToFile(message) {
 //impostazione di un limiter per evitare uso eccessivo ed eventuali ban dell'ip
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 10, // limita a 10 richieste ogni 10 minuti
+  limit: 10, // limita a 10 richieste ogni 10 minuti
 });
 
 //Rotta iniziale
@@ -67,7 +67,7 @@ router.get("/bing", (req, res) => {
 router.post("/bing-desktop-search", limiter, (req, res) => {
   const { key } = req.body;
   res.send("Search start, please wait.");
-  bing.startSearch("desktop", "new", key);
+  bing.startSearch("desktop", "new", key).catch(console.error);
 });
 
 router.post("/bing-search-stop", (req, res) => {
@@ -95,16 +95,9 @@ router.get("/google", (req, res) => {
 });
 
 
-router.post("/google-desktop-search", limiter, async (req, res) => {
-  await google
-    .searchGoogle(req.body.key)
-    .then(() => {
-      res.send("Search start, please wait google.");
-    })
-    .catch((err) => {
-      res.status(500).send("Errore durante l'esecuzione della ricerca" + err);
-    });
-  res.send("Search start, please wait google.");
+router.post("/google-desktop-search", limiter, (req, res) => {
+  res.send("Search start, please wait.");
+  google.searchGoogle(req.body.key).catch(console.error);
 });
 
 router.post("/google-search-stop", (req, res) => {
@@ -137,7 +130,7 @@ router.post("/bookingcom-desktop-search", (req, res) => {
     req.body.key,
     req.body.datein,
     req.body.dateout
-  );
+  ).catch(console.error);
 });
 
 router.get("/amazon", (req, res) => {
@@ -159,7 +152,7 @@ router.get("/amazon", (req, res) => {
 
 router.post("/amazon-desktop-search", (req, res) => {
   res.send("Start scraping, please wait.");
-  amazon.startScrape("desktop", "new", req.body.key);
+  amazon.startScrape("desktop", "new", req.body.key).catch(console.error);
 });
 
 module.exports = router;
