@@ -5,7 +5,7 @@ It includes four example scrapers (Google, Bing, Amazon and Booking.com): the sc
 
 > This project is for study and demonstration purposes only. No data is stored.
 
-**Live demo:** https://web-scraper.davidebalice.dev
+**Live demo:** <https://web-scraper.davidebalice.dev>
 
 ![Screenshot](https://www.aroundweb.it/screenshot/scraper.jpg)
 
